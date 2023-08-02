@@ -8,14 +8,15 @@ function Router() {
     return(
         <BrowserRouter>
             <Switch>
-                <Route exact path="/">
-                    <UsuarioProvider>
-                        <Login />
-                    </UsuarioProvider>
-                </Route>
-                <Route path="/feira">
-                    <Feira />
-                </Route>
+                <UsuarioProvider>
+                    <Route exact path="/">
+                            <Login />
+                    </Route>
+                    <Route path="/feira">
+                        <Feira />
+                    </Route>
+                </UsuarioProvider>
+                
                 <Route path="/carrinho">
                     <Carrinho />
                 </Route>
