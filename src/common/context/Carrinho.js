@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { usePagamentoContext } from "./Pagamento";
+import { UsuarioContext } from "./Usuario";
 
 export const CarrinhoContext = createContext();
 CarrinhoContext.displayName = "Carrinho";
@@ -6,6 +8,7 @@ CarrinhoContext.displayName = "Carrinho";
 export const CarrinhoProvider = ( {children} ) => {
     const [carrinho, setCarrinho] = useState([]);
     const [quantidadeProdutos, setQuantidadeProdutos] = useState(0);
+    const [valorTotalCarrinho, setValorTotalCarrinho] = useState(0);
     
     return (
         <CarrinhoContext.Provider 
@@ -13,7 +16,9 @@ export const CarrinhoProvider = ( {children} ) => {
                 carrinho, 
                 setCarrinho,
                 quantidadeProdutos,
-                setQuantidadeProdutos
+                setQuantidadeProdutos,
+                valorTotalCarrinho,
+                setValorTotalCarrinho
             }}
         >
             {children}
@@ -26,8 +31,18 @@ export const useCarrinhoContext = () => {
         carrinho, 
         setCarrinho, 
         quantidadeProdutos, 
-        setQuantidadeProdutos 
+        setQuantidadeProdutos,
+        valorTotalCarrinho,
+        setValorTotalCarrinho
     } = useContext(CarrinhoContext);
+
+    const {
+        formaPagamento
+    } = usePagamentoContext();
+
+    const {
+        setSaldo
+    } = useContext(UsuarioContext)
 
     function mudarQuantidade(id, quantidade) {
         return carrinho.map(itemDoCarrinho => {
@@ -57,11 +72,25 @@ export const useCarrinhoContext = () => {
         setCarrinho(mudarQuantidade(id, -1));
     }
 
-    useEffect(() => {
-        const novaQuantidade = carrinho.reduce((contador, produto) => contador + produto.quantidade, 0);
-        setQuantidadeProdutos(novaQuantidade)
+    function efetuarCompra() {
+        setCarrinho([]);
+        setSaldo(saldoAtual => saldoAtual - valorTotalCarrinho)
 
-    }, [carrinho, setQuantidadeProdutos])
+    }
+
+    useEffect(() => {
+        const {novoTotal, novaQuantidade} = carrinho.reduce((contador, produto) => 
+            ({
+                novaQuantidade: contador.novaQuantidade + produto.quantidade,
+                novoTotal: contador.novoTotal + (produto.valor * produto.quantidade)
+            }), {
+                novaQuantidade: 0,
+                novoTotal:0
+            });
+        setQuantidadeProdutos(novaQuantidade);
+        setValorTotalCarrinho(novoTotal * formaPagamento.juros)
+
+    }, [carrinho, setQuantidadeProdutos, setValorTotalCarrinho, formaPagamento])
 
     return {
         carrinho,
@@ -69,6 +98,8 @@ export const useCarrinhoContext = () => {
         adicionarProduto,
         removerProduto,
         quantidadeProdutos,
-        setQuantidadeProdutos
+        setQuantidadeProdutos,
+        valorTotalCarrinho,
+        efetuarCompra
     }
 }
